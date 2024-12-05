@@ -1,150 +1,99 @@
-const form = document.getElementById("form");
-const textInput=document.getElementById("textInput");
-const typeInput=document.getElementById("typeInput");
-const numberInput=document.getElementById("numberInput");
-const msg=document.getElementById("msg");
-const card=document.getElementById("card");
-const add= document.getElementById("add");
-const disp=document.getElementById("disp");
-
-let remaining=0;
-let inc=0;
-let exp=0;
-let data=[{}];
-
-
-// const green= [#41CC71];
-// const red= [#f7261f];
-
-const color=()=>{
-    item.type =="Income"? border-["#41CC71"]:border-["#f7261f"];
-}
-
-const formValid=()=>{
-    if(textInput.value==="" ||typeInput.value==="" || numberInput.value==="" )
-    {
-       msg.innerHTML=`<h1>Please enter the values before submit😉</h1>`
-    }
-    else{
-        msg.innerHTML="";
-        storage();
-        // total();
-        add.setAttribute("data-bs-dismiss","modal");
-        add.click();
-        (()=>{
-            add.setAttribute("data-bs-dismiss","")
-        })();
-    }
-}
-
-form.addEventListener("submit",(e)=>{
-    e.preventDefault();
-    formValid();
-
-})
-
-
-
-//storing the vlue in local storage
-
-const storage =()=>{
-    data.push({
-       text:textInput.value,
-       number:numberInput.value,
-       type:typeInput.value
+document.addEventListener("DOMContentLoaded", () => {
+    const transactionForm = document.getElementById("transaction-form");
+    const descriptionInput = document.getElementById("description");
+    const amountInput = document.getElementById("amount");
+    const transactionsList = document.getElementById("transactions");
+    const totalIncome = document.getElementById("total-income");
+    const totalExpense = document.getElementById("total-expense");
+    const netBalance = document.getElementById("net-balance");
+    let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
+  
+    // Update the total income, expense, and balance
+    const updateTotals = () => {
+      let income = transactions
+        .filter((transaction) => transaction.type === "income")
+        .reduce((sum, curr) => sum + curr.amount, 0);
+      let expense = transactions
+        .filter((transaction) => transaction.type === "expense")
+        .reduce((sum, curr) => sum + curr.amount, 0);
+  
+      totalIncome.textContent = `₹${income.toFixed(2)}`;
+      totalExpense.textContent = `₹${expense.toFixed(2)}`;
+      netBalance.textContent = `₹${(income - expense).toFixed(2)}`;
+    };
+  
+    // Save transactions to local storage
+    const saveTransactions = () => {
+      localStorage.setItem("transactions", JSON.stringify(transactions));
+    };
+  
+    // Render the transaction list
+    const renderTransactions = (filter = "all") => {
+      transactionsList.innerHTML = "";
+      const filteredTransactions = transactions.filter(
+        (transaction) => filter === "all" || transaction.type === filter
+      );
+  
+      filteredTransactions.forEach((transaction, index) => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+                <span>${transaction.description}: ₹${transaction.amount}</span>
+                <div>
+                    <button onclick="editTransaction(${index})">Edit</button>
+                    <button onclick="deleteTransaction(${index})">Delete</button>
+                </div>
+            `;
+        transactionsList.appendChild(li);
+      });
+    };
+  
+    // Handle form submission for new transaction
+    transactionForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const description = descriptionInput.value;
+      const amount = parseFloat(amountInput.value);
+      const type = document.querySelector('input[name="type"]:checked').value;
+  
+      transactions.push({ description, amount, type });
+      descriptionInput.value = "";
+      amountInput.value = "";
+  
+      saveTransactions();
+      updateTotals();
+      renderTransactions();
     });
-
-    localStorage.setItem("data", JSON.stringify(data))
-    // console.log("get",data)
-    createCard();
-
-}
-
-//new card
-
-const createCard=()=>{
-    calc();
-    card.innerHTML="";
-    data.map((item,index)=>{
-        return(
-            card.innerHTML +=`
-         <div id=${index} class=  "flex  justify-between items-center gap-2 bg-black rounded-lg text-white p-4 mb-4 min-h-8 break-words text-xs border-l-8  border-[#41CC71]" >
-            <div>
-            <p>${item.type}</p>
-            <p class="text-center"> $ ${item.number}</p>
-           </div>
-           <div>
-            <p >${item.text} </p>
-           </div>
-            <div class="flex gap-4 pr-2">
-            <i class="fa-regular fa-pen-to-square"></i>
-            <i class="fa-solid fa-trash"></i>
-            </div>
-        </div> 
-        `
-
-        )
-    })
-      reset();
-}
-
-
-
-// reseting the form 
-const reset=()=>{
-    textInput.value="",
-    numberInput.value=""
-};
-
-
-const calc=()=>{
-
-    data.map((ele) => {
-        ele.type === "INCOME" ? (inc = inc +parseInt(ele.number)) : (exp = exp +parseInt(ele.number)); 
-    })
-     remaining= inc - exp;   
-      console.log(remaining);
-      console.log(inc);
-      console.log(exp);
-}
-
-
-
-// calculating the values income and expense 
-
-
-const total=()=>{
-    console.log(exp,inc,remaining)
-
-    disp.innerHTML=`<div  class=" flex flex-start items-center text-[20px] " >
-                <i class="fa-solid fa-wallet text-[#3d7a5f] "></i>
-             <p class="text-[#41CC71] font-medium px-2 "> $${remaining}</p>
-            </div>
-            <div  class="bg-black flex  justify-center text-white  p-2   rounded-md">
-              <div class="border-dotted border-r-[1px] px-4">
-                <p>INCOME</p>
-                 <p class="text-[#41CC71] ">$${inc}</p>
-            </div>
-            <div class="px-4">
-                <P>EXPENSE</P>
-                 <p class="text-[#F73E34]">$${exp}</p>
-            </div>   
-            </div>`
-
-}
-
-
-// to display immediately
-
-(()=>{
-    data = JSON.parse(localStorage.getItem("data")) || [];
-    createCard();
-    total();
-})();
-
-
-
-
-
-
-
+  
+    // Filter transactions based on user selection
+    document.querySelectorAll('input[name="filter"]').forEach((filter) => {
+      filter.addEventListener("change", () => {
+        const selectedFilter = document.querySelector(
+          'input[name="filter"]:checked'
+        ).value;
+        renderTransactions(selectedFilter);
+      });
+    });
+  
+    // Delete a transaction
+    window.deleteTransaction = (index) => {
+      transactions.splice(index, 1);
+      saveTransactions();
+      updateTotals();
+      renderTransactions();
+    };
+  
+    // Edit a transaction
+    window.editTransaction = (index) => {
+      const transaction = transactions[index];
+      descriptionInput.value = transaction.description;
+      amountInput.value = transaction.amount;
+      document.querySelector(`input[value="${transaction.type}"]`).checked = true;
+      transactions.splice(index, 1);
+      saveTransactions();
+      updateTotals();
+      renderTransactions();
+    };
+  
+    // Initial load of totals and transactions
+    updateTotals();
+    renderTransactions();
+  });
